@@ -1,6 +1,6 @@
 # Sky Tracker SDK
 
-C++ tracking core for fast-moving small objects — installable as a Python package, no GPU required.
+C++ tracking core for fast-moving small objects - installable as a Python package, no GPU required.
 
 ## Install
 
@@ -41,7 +41,16 @@ Set the key before running:
 $env:SKY_TRACKER_LICENSE_KEY = "<your-token>"
 ```
 
-Or drop `sky_tracker.lic` next to your script — the runtime finds it automatically.
+Or drop `sky_tracker.lic` next to your script - the runtime finds it automatically.
+
+## Example
+
+[`examples/track_video.py`](examples/track_video.py) - select a target on the first frame, track through the whole video, save annotated output with a zoom inset.
+
+```bash
+python examples/track_video.py your_video.mp4
+# → your_video_tracked.mp4
+```
 
 ## Example
 

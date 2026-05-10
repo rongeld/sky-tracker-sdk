@@ -16,8 +16,8 @@ import sys
 import cv2
 import sky_tracker
 
-ZOOM_H   = 160   # height of the zoom inset in the bottom-right corner
-ZOOM_PAD = 10    # margin from the edge
+ZOOM_H = 160  # height of the zoom inset in the bottom-right corner
+ZOOM_PAD = 10  # margin from the edge
 
 
 def draw_zoom(frame, raw, bx, by, bw, bh):
@@ -33,7 +33,7 @@ def draw_zoom(frame, raw, bx, by, bw, bh):
     cv2.rectangle(zoom, (0, 0), (zoom_w - 1, ZOOM_H - 1), (0, 255, 255), 2)
     ox = w - zoom_w - ZOOM_PAD
     oy = h - ZOOM_H - ZOOM_PAD
-    frame[oy:oy + ZOOM_H, ox:ox + zoom_w] = zoom
+    frame[oy : oy + ZOOM_H, ox : ox + zoom_w] = zoom
     return frame
 
 
@@ -48,7 +48,7 @@ fps = cap.get(cv2.CAP_PROP_FPS) or 30
 fh, fw = frame.shape[:2]
 
 # Draw a box around the target, then press Enter to lock
-bbox = cv2.selectROI("Select target — press Enter to confirm", frame, fromCenter=False)
+bbox = cv2.selectROI("Select target - press Enter to confirm", frame, fromCenter=False)
 cv2.destroyAllWindows()
 
 tracker = sky_tracker.Tracker("pi4-target")
@@ -65,7 +65,9 @@ while cap.isOpened():
     result = tracker.update(frame)
     out = result.annotate()
     if not result.lost:
-        out = draw_zoom(out, frame, result.bbox_x, result.bbox_y, result.bbox_w, result.bbox_h)
+        out = draw_zoom(
+            out, frame, result.bbox_x, result.bbox_y, result.bbox_w, result.bbox_h
+        )
     writer.write(out)
     frame_count += 1
 
