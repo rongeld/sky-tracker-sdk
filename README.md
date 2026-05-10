@@ -43,6 +43,15 @@ $env:SKY_TRACKER_LICENSE_KEY = "<your-token>"
 
 Or drop `sky_tracker.lic` next to your script — the runtime finds it automatically.
 
+## Example
+
+[`examples/track_video.py`](examples/track_video.py) — select a target on the first frame, track through the whole video, save annotated output with a zoom inset.
+
+```bash
+python examples/track_video.py your_video.mp4
+# → your_video_tracked.mp4
+```
+
 ## Documentation
 
 - [Python quickstart](docs/quickstart-python.md)
@@ -50,9 +59,9 @@ Or drop `sky_tracker.lic` next to your script — the runtime finds it automatic
 
 ## Platforms
 
-| Platform | Status |
-| --- | --- |
-| Windows x64 | Verified |
-| Linux x86_64 | Planned |
-| Raspberry Pi 4 (ARM64) | Benchmark required |
-| macOS | Planned |
+| Platform               | Status      |
+| ---------------------- | ----------- |
+| Windows x64            | Verified    |
+| Linux x86_64           | Coming soon |
+| Raspberry Pi 4 (ARM64) | Coming soon |
+| macOS                  | Coming soon |
