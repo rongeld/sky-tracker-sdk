@@ -1,4 +1,4 @@
-# Sky Tracker SDK - Python Quickstart
+# Sky Tracker SDK — Python Quickstart
 
 **Prerequisites**
 
@@ -32,7 +32,7 @@ The `Tracker` constructor reads this variable at import time. A missing or inval
 
 ## 2. Run the smoke test
 
-The quickest check - runs 30 frames of the sample video and reports confidence:
+The quickest check — runs 30 frames of the sample video and reports confidence:
 
 ```powershell
 python cpp_tracker\tools\smoke_python_sdk.py `
@@ -113,12 +113,12 @@ cap.release()
 
 ### `sky_tracker.Tracker(profile)`
 
-| Profile        | Use case                            |
-| -------------- | ----------------------------------- |
-| `"default"`    | General-purpose                     |
-| `"birds"`      | Close-pass, occlusion-heavy targets |
-| `"missile"`    | Fast-moving, scaling targets        |
-| `"pi4-target"` | Reduced-resolution on ARM hardware  |
+| Profile | Use case |
+|---------|----------|
+| `"default"` | General-purpose |
+| `"birds"` | Close-pass, occlusion-heavy targets |
+| `"missile"` | Fast-moving, scaling targets |
+| `"pi4-target"` | Reduced-resolution on ARM hardware |
 
 You can also pass a `TrackerConfig` object:
 
@@ -138,20 +138,20 @@ Process the next frame. Pass `dt` in seconds for deterministic video processing.
 
 ### `TrackResult` fields
 
-| Field                                  | Type    | Description                                 |
-| -------------------------------------- | ------- | ------------------------------------------- |
-| `frame`                                | int     | Frame counter since `lock()`                |
-| `lost`                                 | bool    | `True` when the tracker has lost the target |
-| `state`                                | str     | `"confirmed"`, `"tentative"`, or `"lost"`   |
-| `cx`, `cy`                             | float   | Target centre, pixels                       |
-| `bbox_x`, `bbox_y`, `bbox_w`, `bbox_h` | float   | Bounding box                                |
-| `confidence`                           | float   | 0–1 template match confidence               |
-| `speed`                                | float   | Speed in pixels/second                      |
-| `hits`, `misses`                       | int     | Track quality counters                      |
-| `reason`                               | str     | Internal tracking decision label            |
-| `bbox()`                               | tuple   | `(x, y, w, h)` shorthand                    |
-| `center()`                             | tuple   | `(cx, cy)` shorthand                        |
-| `annotate()`                           | ndarray | Copy of the frame with cyan HUD drawn       |
+| Field | Type | Description |
+|-------|------|-------------|
+| `frame` | int | Frame counter since `lock()` |
+| `lost` | bool | `True` when the tracker has lost the target |
+| `state` | str | `"confirmed"`, `"tentative"`, or `"lost"` |
+| `cx`, `cy` | float | Target centre, pixels |
+| `bbox_x`, `bbox_y`, `bbox_w`, `bbox_h` | float | Bounding box |
+| `confidence` | float | 0–1 template match confidence |
+| `speed` | float | Speed in pixels/second |
+| `hits`, `misses` | int | Track quality counters |
+| `reason` | str | Internal tracking decision label |
+| `bbox()` | tuple | `(x, y, w, h)` shorthand |
+| `center()` | tuple | `(cx, cy)` shorthand |
+| `annotate()` | ndarray | Copy of the frame with cyan HUD drawn |
 
 ---
 
@@ -183,5 +183,5 @@ Share your CSV and any annotated frames with us. The `reason` field in each row 
 
 - The Python module is a `.pyd` / `.so` binary built against a specific OpenCV version. If you see import errors, ensure `opencv-python` matches the version used to build the module.
 - On Windows, call `os.add_dll_directory(MODULE_DIR)` before `import sky_tracker` so the loader finds OpenCV DLLs next to the module.
-- `annotate()` returns a full-resolution copy of the frame - avoid calling it on every frame in throughput-critical paths.
+- `annotate()` returns a full-resolution copy of the frame — avoid calling it on every frame in throughput-critical paths.
 - The licence key is checked when `Tracker()` is constructed. If the key expires mid-session the current tracker instance keeps running; the next `Tracker()` construction will fail.
