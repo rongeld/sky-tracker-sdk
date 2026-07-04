@@ -139,7 +139,7 @@ console.log(`active=${active.length}/${rows.length}`);
 | `maxFrames` | unlimited | Stop after N frames |
 | `csv` | temp file | Telemetry output path |
 | `output` | — | Annotated MP4 output path |
-| `profile` | `"default"` | Tracking profile (`default`, `pi4-target`, `missile`) |
+| `profile` | `"default"` | Tracking profile (`default`, `correlation`, `pi4-target`, `missile`) |
 | `licenseKey` | env var | Per-run licence key override |
 
 ---
