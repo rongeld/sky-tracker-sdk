@@ -1,8 +1,8 @@
-# Sky Tracker SDK - Python Quickstart
+# Sky Tracker SDK — Python Quickstart
 
 **Prerequisites**
 
-- Python 3.9 or later
+- Python 3.10 or later
 - OpenCV for Python: `pip install opencv-python`
 - `sky_tracker.pyd` (Windows) or `sky_tracker.so` (Linux) built from the C++ Python binding
 - Your evaluation licence key
@@ -32,7 +32,7 @@ The `Tracker` constructor reads this variable at import time. A missing or inval
 
 ## 2. Run the smoke test
 
-The quickest check - runs 30 frames of the sample video and reports confidence:
+The quickest check — runs 30 frames of the sample video and reports confidence:
 
 ```powershell
 python cpp_tracker\tools\smoke_python_sdk.py `
@@ -80,7 +80,7 @@ dt  = 1.0 / fps
 ok, first_frame = cap.read()
 assert ok, "could not read first frame"
 
-tracker = sky_tracker.Tracker("default")   # profiles: default, birds, missile, pi4-target
+tracker = sky_tracker.Tracker("default")   # profiles: default, correlation, adaptive
 tracker.lock(first_frame, bbox=(469, 409, 26, 38))   # (x, y, width, height)
 
 # ── Process frames ───────────────────────────────────────────────────────────
@@ -109,22 +109,72 @@ cap.release()
 
 ---
 
-## 4. API reference
+## 4. Native multi-target API
+
+Use `sky_tracker.MultiTracker` when the caller provides several selected
+targets. The SDK assigns stable `target_id` values from the initial bbox order.
+
+```python
+multi = sky_tracker.MultiTracker("default")
+multi.lock(first_frame, [
+    (469, 409, 26, 38),
+    (520, 390, 24, 34),
+])
+
+for i in range(120):
+    ok, frame = cap.read()
+    if not ok:
+        break
+
+    for result in multi.update(frame, dt):
+        print(
+            f"target={result.target_id} state={result.state} "
+            f"bbox={result.bbox()} suppressed={result.suppressed}"
+        )
+```
+
+Target proposals are assigned one-to-one before tracker state is committed. A
+clear duplicate loser coasts with `suppressed=True`, `state="lost"`, and
+`suppressed_by_id` pointing to the owner. Indistinguishable claims fail closed
+with `reason="coast-ambiguous-owner"` and `suppressed_by_id=0`, avoiding an
+arbitrary target-order tie-break.
+
+During close interactions, translation continues while appearance learning and
+adaptive bbox geometry updates are frozen. Outside an interaction,
+`adaptive` foreground geometry and `default` candidate geometry are
+aspect/scale constrained, clipped to the assigned ownership cell, and kept
+separate from the identity search bbox.
+
+Command-line example:
+
+```powershell
+python cpp_tracker\examples\track_multi_video.py `
+  --video video_20.mp4 `
+  --bbox 469,409,26,38 `
+  --bbox 520,390,24,34 `
+  --csv cpp_tracker\build-python\video_20_multi_sdk.csv
+```
+
+---
+
+## 5. API reference
 
 ### `sky_tracker.Tracker(profile)`
 
-| Profile        | Use case                            |
-| -------------- | ----------------------------------- |
-| `"default"`    | General-purpose                     |
-| `"birds"`      | Close-pass, occlusion-heavy targets |
-| `"missile"`    | Fast-moving, scaling targets        |
-| `"pi4-target"` | Reduced-resolution on ARM hardware  |
+| Profile | Use case |
+|---------|----------|
+| `"default"` | Recommended speed/quality balance; uses the former Pi4-target policy |
+| `"correlation"` | Correlation-led identity lock |
+| `"adaptive"` | Correlation-led identity with gated foreground bbox fitting |
+
+Legacy names such as `pi4-target`, `adaptive-target`, `hybrid-target`, and
+`sota-target` are still accepted as deprecated aliases.
 
 You can also pass a `TrackerConfig` object:
 
 ```python
 cfg = sky_tracker.TrackerConfig()
-cfg.profile = "birds"
+cfg.profile = "adaptive"
 tracker = sky_tracker.Tracker(cfg)
 ```
 
@@ -136,26 +186,45 @@ Seeds the tracker on the first frame. `bbox` is `(x, y, width, height)` in pixel
 
 Process the next frame. Pass `dt` in seconds for deterministic video processing. If omitted, the tracker measures wall-clock time automatically.
 
+### `sky_tracker.MultiTracker(profile)`
+
+Native selected-target multi-tracker. Use `lock(frame, bboxes)` with
+`bboxes=[(x, y, width, height), ...]`, then call `update(frame, dt)` once per
+frame. It returns a list of `TrackResult` objects.
+
 ### `TrackResult` fields
 
-| Field                                  | Type    | Description                                 |
-| -------------------------------------- | ------- | ------------------------------------------- |
-| `frame`                                | int     | Frame counter since `lock()`                |
-| `lost`                                 | bool    | `True` when the tracker has lost the target |
-| `state`                                | str     | `"confirmed"`, `"tentative"`, or `"lost"`   |
-| `cx`, `cy`                             | float   | Target centre, pixels                       |
-| `bbox_x`, `bbox_y`, `bbox_w`, `bbox_h` | float   | Bounding box                                |
-| `confidence`                           | float   | 0–1 template match confidence               |
-| `speed`                                | float   | Speed in pixels/second                      |
-| `hits`, `misses`                       | int     | Track quality counters                      |
-| `reason`                               | str     | Internal tracking decision label            |
-| `bbox()`                               | tuple   | `(x, y, w, h)` shorthand                    |
-| `center()`                             | tuple   | `(cx, cy)` shorthand                        |
-| `annotate()`                           | ndarray | Copy of the frame with cyan HUD drawn       |
+| Field | Type | Description |
+|-------|------|-------------|
+| `frame` | int | Frame counter since `lock()` |
+| `lost` | bool | `True` when the tracker has lost the target |
+| `state` | str | `"confirmed"`, `"tentative"`, or `"lost"` |
+| `cx`, `cy` | float | Target centre, pixels |
+| `bbox_x`, `bbox_y`, `bbox_w`, `bbox_h` | float | Bounding box |
+| `confidence` | float | 0–1 template match confidence |
+| `speed` | float | Speed in pixels/second |
+| `hits`, `misses` | int | Track quality counters |
+| `reason` | str | Internal tracking decision label |
+| `target_id` | int | Stable selected-target id, same as `id` |
+| `anchor_appearance` | float | Appearance similarity to the immutable initialization anchor |
+| `suppressed` | bool | True when this target coasts due to ambiguous ownership or another target owning the observation |
+| `suppressed_by_id` | int | Owning target id, or 0 for an ambiguous claim / no owner |
+| `interacting` | bool | True while this target is in a guarded close interaction |
+| `model_learning_suppressed` | bool | True when appearance and correlation learning are frozen |
+| `geometry_update_suppressed` | bool | True when bbox width/height adaptation is frozen |
+| `geometry_ownership_constrained` | bool | True when a geometry measurement was clipped to the target's ownership cell |
+| `geometry_confidence` | float | Owned geometry measurement confidence, or 0 when no measurement was available |
+| `prediction_only` | bool | True when bbox/center are a tentative velocity coast, not an accepted observation |
+| `bbox()` | tuple | `(x, y, w, h)` shorthand |
+| `center()` | tuple | `(cx, cy)` shorthand |
+| `annotate()` | ndarray | Copy of the frame with cyan HUD drawn |
+
+Prediction-only results never update appearance or geometry. Treat them as a
+short-gap display/prediction signal, not as a confirmed image observation.
 
 ---
 
-## 5. Writing a CSV from Python
+## 6. Writing a CSV from Python
 
 ```python
 import csv
@@ -173,7 +242,42 @@ with open("results.csv", "w", newline="") as f:
 
 ---
 
-## 6. Sending evaluation results back
+## 7. Live camera input
+
+For USB/V4L2 cameras, pass an integer camera id to OpenCV and keep the tracker API unchanged:
+
+```python
+import cv2
+import sky_tracker
+
+cap = cv2.VideoCapture(0)
+ok, frame = cap.read()
+assert ok, "could not read camera frame"
+
+bbox = cv2.selectROI("select target", frame, fromCenter=False)
+cv2.destroyAllWindows()
+
+tracker = sky_tracker.Tracker("default")
+tracker.lock(frame, bbox)
+
+while True:
+    ok, frame = cap.read()
+    if not ok:
+        break
+    result = tracker.update(frame)
+    cv2.imshow("sky_tracker", result.annotate())
+    if cv2.waitKey(1) == ord("q"):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
+
+On Raspberry Pi OS 64-bit, install the Linux ARM64 wheel and use the same frame-by-frame API. If the official Pi camera is not available as `/dev/video0`, use Picamera2 to capture BGR frames and pass those frames to `tracker.update(...)`.
+
+---
+
+## 8. Sending evaluation results back
 
 Share your CSV and any annotated frames with us. The `reason` field in each row is especially useful for diagnosing tracking failures.
 
@@ -183,5 +287,5 @@ Share your CSV and any annotated frames with us. The `reason` field in each row 
 
 - The Python module is a `.pyd` / `.so` binary built against a specific OpenCV version. If you see import errors, ensure `opencv-python` matches the version used to build the module.
 - On Windows, call `os.add_dll_directory(MODULE_DIR)` before `import sky_tracker` so the loader finds OpenCV DLLs next to the module.
-- `annotate()` returns a full-resolution copy of the frame - avoid calling it on every frame in throughput-critical paths.
+- `annotate()` returns a full-resolution copy of the frame — avoid calling it on every frame in throughput-critical paths.
 - The licence key is checked when `Tracker()` is constructed. If the key expires mid-session the current tracker instance keeps running; the next `Tracker()` construction will fail.
