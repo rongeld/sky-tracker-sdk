@@ -80,7 +80,7 @@ dt  = 1.0 / fps
 ok, first_frame = cap.read()
 assert ok, "could not read first frame"
 
-tracker = sky_tracker.Tracker("default")   # profiles: default, correlation, birds, missile, pi4-target
+tracker = sky_tracker.Tracker("default")   # profiles: default, correlation, adaptive
 tracker.lock(first_frame, bbox=(469, 409, 26, 38))   # (x, y, width, height)
 
 # ── Process frames ───────────────────────────────────────────────────────────
@@ -133,9 +133,17 @@ for i in range(120):
         )
 ```
 
-If two selected target slots claim the same object in a frame, the weaker
-duplicate is returned with `suppressed=True`, `state="lost"`, and
-`suppressed_by_id` pointing to the target that kept the claim.
+Target proposals are assigned one-to-one before tracker state is committed. A
+clear duplicate loser coasts with `suppressed=True`, `state="lost"`, and
+`suppressed_by_id` pointing to the owner. Indistinguishable claims fail closed
+with `reason="coast-ambiguous-owner"` and `suppressed_by_id=0`, avoiding an
+arbitrary target-order tie-break.
+
+During close interactions, translation continues while appearance learning and
+adaptive bbox geometry updates are frozen. Outside an interaction,
+`adaptive` foreground geometry and `default` candidate geometry are
+aspect/scale constrained, clipped to the assigned ownership cell, and kept
+separate from the identity search bbox.
 
 Command-line example:
 
@@ -155,16 +163,18 @@ python cpp_tracker\examples\track_multi_video.py `
 
 | Profile | Use case |
 |---------|----------|
-| `"default"` | General-purpose |
-| `"birds"` | Close-pass, occlusion-heavy targets |
-| `"missile"` | Fast-moving, scaling targets |
-| `"pi4-target"` | Reduced-resolution on ARM hardware |
+| `"default"` | Recommended speed/quality balance; uses the former Pi4-target policy |
+| `"correlation"` | Correlation-led identity lock |
+| `"adaptive"` | Correlation-led identity with gated foreground bbox fitting |
+
+Legacy names such as `pi4-target`, `adaptive-target`, `hybrid-target`, and
+`sota-target` are still accepted as deprecated aliases.
 
 You can also pass a `TrackerConfig` object:
 
 ```python
 cfg = sky_tracker.TrackerConfig()
-cfg.profile = "birds"
+cfg.profile = "adaptive"
 tracker = sky_tracker.Tracker(cfg)
 ```
 
@@ -196,11 +206,21 @@ frame. It returns a list of `TrackResult` objects.
 | `hits`, `misses` | int | Track quality counters |
 | `reason` | str | Internal tracking decision label |
 | `target_id` | int | Stable selected-target id, same as `id` |
-| `suppressed` | bool | True when this target was suppressed due to a duplicate claim |
-| `suppressed_by_id` | int | Winning target id for a suppressed duplicate, otherwise 0 |
+| `anchor_appearance` | float | Appearance similarity to the immutable initialization anchor |
+| `suppressed` | bool | True when this target coasts due to ambiguous ownership or another target owning the observation |
+| `suppressed_by_id` | int | Owning target id, or 0 for an ambiguous claim / no owner |
+| `interacting` | bool | True while this target is in a guarded close interaction |
+| `model_learning_suppressed` | bool | True when appearance and correlation learning are frozen |
+| `geometry_update_suppressed` | bool | True when bbox width/height adaptation is frozen |
+| `geometry_ownership_constrained` | bool | True when a geometry measurement was clipped to the target's ownership cell |
+| `geometry_confidence` | float | Owned geometry measurement confidence, or 0 when no measurement was available |
+| `prediction_only` | bool | True when bbox/center are a tentative velocity coast, not an accepted observation |
 | `bbox()` | tuple | `(x, y, w, h)` shorthand |
 | `center()` | tuple | `(cx, cy)` shorthand |
 | `annotate()` | ndarray | Copy of the frame with cyan HUD drawn |
+
+Prediction-only results never update appearance or geometry. Treat them as a
+short-gap display/prediction signal, not as a confirmed image observation.
 
 ---
 
@@ -237,7 +257,7 @@ assert ok, "could not read camera frame"
 bbox = cv2.selectROI("select target", frame, fromCenter=False)
 cv2.destroyAllWindows()
 
-tracker = sky_tracker.Tracker("pi4-target")
+tracker = sky_tracker.Tracker("default")
 tracker.lock(frame, bbox)
 
 while True:

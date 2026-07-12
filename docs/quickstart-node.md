@@ -128,7 +128,20 @@ console.log(`active=${active.length}/${rows.length}`);
 | `hits`, `misses` | number | Track hit/miss counters |
 | `target_confidence` | number | 0–1 template match confidence |
 | `target_score` | number | Raw template score |
+| `target_candidate_score` | number | Raw score for the selected candidate |
 | `target_reason` | string | Internal tracking decision label |
+| `target_anchor_appearance` | number | Appearance similarity to the initialization anchor |
+| `target_suppressed` | number | `1` when ownership handling makes this target coast |
+| `target_suppressed_by_id` | number | Owning target ID, or `0` for an ambiguous claim / no owner |
+| `target_interacting` | number | `1` during a guarded close interaction |
+| `target_model_learning_suppressed` | number | `1` while appearance/correlation learning is frozen |
+| `target_geometry_update_suppressed` | number | `1` while bbox width/height adaptation is frozen |
+| `target_geometry_ownership_constrained` | number | `1` when geometry was clipped to the target's ownership cell |
+| `target_geometry_confidence` | number | Owned geometry measurement confidence, or `0` when none was available |
+| `target_prediction_only` | number | `1` when bbox/center are a tentative velocity coast, not an accepted observation |
+
+Prediction-only rows are suppressed from appearance and geometry learning.
+Observation-derived score and geometry-confidence fields are `0` on these rows.
 
 ### trackVideo options
 
@@ -139,7 +152,7 @@ console.log(`active=${active.length}/${rows.length}`);
 | `maxFrames` | unlimited | Stop after N frames |
 | `csv` | temp file | Telemetry output path |
 | `output` | — | Annotated MP4 output path |
-| `profile` | `"default"` | Tracking profile (`default`, `correlation`, `pi4-target`, `missile`) |
+| `profile` | `"default"` | Tracking profile (`default`, `correlation`, or `adaptive`) |
 | `licenseKey` | env var | Per-run licence key override |
 
 ---
