@@ -1,5 +1,12 @@
 # Sky Tracker SDK — Python Quickstart
 
+See the [0.2.2 release notes](release-0.2.2.md) for the latest fixes.
+
+Version 0.2.0 enables correlation and stable foreground boxes in `default`.
+For the v0.1.12 default behavior, use `sky_tracker.Tracker("legacy")`,
+`sky_tracker.MultiTracker("legacy")`, or set `TrackerConfig.profile = "legacy"`.
+Existing calls remain valid. `correlation` retains its previous automatic 128/256 search sizing.
+
 **Prerequisites**
 
 - Python 3.10 or later
@@ -80,7 +87,7 @@ dt  = 1.0 / fps
 ok, first_frame = cap.read()
 assert ok, "could not read first frame"
 
-tracker = sky_tracker.Tracker("default")   # profiles: default, correlation, adaptive
+tracker = sky_tracker.Tracker("default")   # profiles: default, correlation, adaptive, legacy
 tracker.lock(first_frame, bbox=(469, 409, 26, 38))   # (x, y, width, height)
 
 # ── Process frames ───────────────────────────────────────────────────────────
@@ -289,3 +296,7 @@ Share your CSV and any annotated frames with us. The `reason` field in each row 
 - On Windows, call `os.add_dll_directory(MODULE_DIR)` before `import sky_tracker` so the loader finds OpenCV DLLs next to the module.
 - `annotate()` returns a full-resolution copy of the frame — avoid calling it on every frame in throughput-critical paths.
 - The licence key is checked when `Tracker()` is constructed. If the key expires mid-session the current tracker instance keeps running; the next `Tracker()` construction will fail.
+
+The optional `correlation-quality` and `adaptive-quality` profiles enable the
+separate quality engine. Existing profiles keep their current behavior. See
+[quality engine details](correlation-quality-update.md) for the tradeoffs.
