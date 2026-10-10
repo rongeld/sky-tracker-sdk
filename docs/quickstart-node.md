@@ -177,4 +177,4 @@ Share `results.csv` and (optionally) `annotated.mp4` with us. The CSV contains t
 
 The optional `correlation-quality` and `adaptive-quality` profiles enable the
 separate quality engine. Existing profiles keep their current behavior. See
-[quality engine details](correlation-quality-update.md) for the tradeoffs.
+[0.2.0 release notes](release-0.2.0.md) for profile details.

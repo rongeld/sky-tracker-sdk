@@ -299,4 +299,4 @@ Share your CSV and any annotated frames with us. The `reason` field in each row 
 
 The optional `correlation-quality` and `adaptive-quality` profiles enable the
 separate quality engine. Existing profiles keep their current behavior. See
-[quality engine details](correlation-quality-update.md) for the tradeoffs.
+[0.2.0 release notes](release-0.2.0.md) for profile details.

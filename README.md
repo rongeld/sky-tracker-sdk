@@ -116,9 +116,13 @@ tracks to the same observation. The result exposes this state through
 | `default`     | You want the recommended speed/quality balance and adaptive visible bbox sizing. |
 | `correlation` | You prefer a correlation-led identity lock with conservative box geometry.       |
 | `adaptive`    | You want correlation-led identity plus gated foreground bbox fitting.            |
+| `legacy`      | You want to retain the pre-0.2.0 default tracking policy (v0.1.12 baseline).     |
+| `correlation-quality` | You want opt-in normalized correlation, appearance checks, and fixed box sizing. |
+| `adaptive-quality`    | You want the quality engine with adaptive foreground geometry.           |
 
 Start with `default`. Compare profiles on your own labelled footage before
-changing a production configuration.
+changing a production configuration. When upgrading from v0.1.12, use `legacy`
+to retain original behavior.
 
 ## Python examples
 
@@ -196,3 +200,6 @@ Every example supports `--help`.
 
 - [Python quickstart](docs/quickstart-python.md)
 - [Node.js quickstart](docs/quickstart-node.md)
+- [C++ quickstart](docs/quickstart-cpp.md)
+- [0.2.2 release notes](docs/release-0.2.2.md)
+- [0.2.0 migration notes](docs/release-0.2.0.md)
